@@ -3,7 +3,7 @@
 
 'a test module'
 
-__author__ = 'Michael Huang'
+__author__ = 'viphsj'
 
 import sys
 
