@@ -34,8 +34,7 @@ def get_title_link(url, pattern):#获取新闻的标题和正文链接
     soup = get_html_soup(url)
     news_link = {}
 
-    scroll_list = BeautifulSoup(str(soup.find("div", attrs = pattern)), "lxml")
-    print (scroll_list)
+    scroll_list = BeautifulSoup(str(soup.find("div", attrs = pattern)), "lxml")    
     for link in scroll_list.find_all("a"):
         if len(link.get_text().strip()) > 0 and link.get("href").find("http") != -1:
             news_link[link.get_text()] = link.get('href')
