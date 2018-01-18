@@ -16,7 +16,7 @@ international = "国际"
 def get_html_soup(url):#获取解编码后的HTML
     html = None
     try:
-        response = urllib.request.urlopen(url, timeout = 10)
+        response = request.urlopen(url, timeout = 10)
         html = response.read().decode(encoding = "utf8", errors='ignore')
     except Exception as e:
         print(e, "please check your network situation")
