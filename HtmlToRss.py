@@ -1,4 +1,9 @@
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
+'a test module'
+
+__author__ = 'viphsj'
 
 import urllib.request
 import os
