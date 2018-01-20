@@ -3,7 +3,7 @@
 
 'a test module'
 
-__author__ = 'viphsj'
+__author__ = 'Dou Ba'
 
 from urllib import request
 import os
