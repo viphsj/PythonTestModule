@@ -1,15 +1,17 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import urllib.request
+'a test module'
+
+__author__ = 'Dou Ba'
+
 import os
 import shutil
+from urllib import request
 from bs4 import BeautifulSoup
 from docx import Document
 from docx.shared import Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-
-national = "mydrivers"
-international = "国际"
 
 def get_html_soup(url):#获取解编码后的HTML
     html = None
@@ -94,45 +96,31 @@ def create_docx(news_type, title, content):
     document.save(news_type + "/" + name)
 
 ########################################################################
-blog_news = "http://blog.mydrivers.com/"
-blog_news_pattern = {"id": "main"}
 
-#interblog_news = "http://blog.mydrivers.com/"
-#interblog_news_pattern = {"class": "partR domPC"}
+def githrml():
+    national = "mydrivers"
+    blog_news = "http://blog.mydrivers.com/"
+    blog_news_pattern = {"id": "main"}
 
-#删除旧目录
-print("deleting old dir")
-if os.path.exists(international):
-    shutil.rmtree(international)
-if os.path.exists(national):
-    shutil.rmtree(national)
+    #删除旧目录
+    print("deleting old dir")
+    if os.path.exists(national):
+        shutil.rmtree(national)
 
-#创建新目录
-print("creating dir: ", international)
-os.mkdir(international)
-print("creating dir: ", national)
-os.mkdir(national)
+    #创建新目录
+    print("creating dir: ", national)
+    os.mkdir(national)
 
-#获取新闻的标题和链接
-'''
-interblog_news_list = get_title_link(interblog_news, interblog_news_pattern)
-print("\ngetting international news content")
-#获取新闻的内容主体并写入文件
-for x in interblog_news_list:
-    paras = get_news_body(interblog_news_list[x])
-    #paras = get_news_body(x)
-    if paras != None and len(paras) > 0:
-        print("writing:", clean_chinese_character(x), interblog_news_list[x])
-        create_docx(international, x, paras)
-'''
+    blog_news_list = get_title_link(blog_news, blog_news_pattern);
+    print("\ngetting national news content")
+    for x in blog_news_list:
+        paras = get_news_body(blog_news_list[x])
+        #paras = get_news_body(x)
+        if paras != None and len(paras) > 0:
+            print("writing:", clean_chinese_character(x), blog_news_list[x])
+            create_docx(national, x, paras)
 
-blog_news_list = get_title_link(blog_news, blog_news_pattern);
-print("\ngetting national news content")
-for x in blog_news_list:
-    paras = get_news_body(blog_news_list[x])
-    #paras = get_news_body(x)
-    if paras != None and len(paras) > 0:
-        print("writing:", clean_chinese_character(x), blog_news_list[x])
-        create_docx(national, x, paras)
+    print("All done, have a nice day")
 
-print("All done, have a nice day")
+if __name__ == "__main__":
+    githrml()
