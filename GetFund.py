@@ -52,6 +52,41 @@ def randHeader():
     }  
     return result  
 
+def getCurrentTime():  
+        # 获取当前时间  
+        return time.strftime('[%Y-%m-%d %H:%M:%S]', time.localtime(time.time()))  
+def getURL(url, tries_num=5, sleep_time=0, time_out=10,max_retry = 5):  
+        ''''' 
+           这里重写get函数，主要是为了实现网络中断后自动重连，同时为了兼容各种网站不同的反爬策略及，通过sleep时间和timeout动态调整来测试合适的网络连接参数； 
+           通过isproxy 来控制是否使用代理，以支持一些在内网办公的同学 
+        :param url: 
+        :param tries_num:  重试次数 
+        :param sleep_time: 休眠时间 
+        :param time_out: 连接超时参数 
+        :param max_retry: 最大重试次数，仅仅是为了递归使用 
+        :return: response 
+        '''  
+        sleep_time_p = sleep_time  
+        time_out_p = time_out  
+        tries_num_p = tries_num  
+        try:  
+            res = requests.Session()  
+            if isproxy == 1:  
+                res = requests.get(url, headers=header, timeout=time_out, proxies=proxy)  
+            else:  
+                res = requests.get(url, headers=header, timeout=time_out)  
+            res.raise_for_status()  # 如果响应状态码不是 200，就主动抛出异常  
+        except requests.RequestException as e:  
+            sleep_time_p = sleep_time_p + 10  
+            time_out_p = time_out_p + 10  
+            tries_num_p = tries_num_p - 1  
+            # 设置重试次数，最大timeout 时间和 最长休眠时间  
+            if tries_num_p > 0:  
+                time.sleep(sleep_time_p)  
+                print (getCurrentTime(), url, 'URL Connection Error: 第', max_retry - tries_num_p, u'次 Retry Connection', e)  
+                return getURL(url, tries_num_p, sleep_time_p, time_out_p,max_retry)  
+        return res  
+    
 def get_html_soup(url):#获取解编码后的HTML
     html = None
     try:        
@@ -128,7 +163,77 @@ def clean_chinese_character(text):
         else:
             new_text += "_"
     return new_text;
-########################################################################
+
+class FundSpiders():  
+  
+    def getCurrentTime(self):  
+        # 获取当前时间  
+        return time.strftime('[%Y-%m-%d %H:%M:%S]', time.localtime(time.time()))  
+  
+    def getFundCodesFromCsv(self):  
+        # 从csv文件中获取基金代码清单（可从wind或者其他财经网站导出）
+        file_path=os.path.join(os.getcwd(),'fund.csv')  
+        fund_code = pd.read_csv(filepath_or_buffer=file_path, encoding='utf-8')  
+        Code=fund_code.trade_code  
+        #print ( Code)  
+        return Code  
+    
+    def getFundInfo(self,fund_code):  
+        ''''' 
+        获取基金概况基本信息 
+        :param fund_code: 
+        :return: 
+        '''  
+        fund_url='http://fund.eastmoney.com/f10/jbgk_'+fund_code +'.html'  
+        res = getURL(fund_url)  
+        soup = BeautifulSoup(res.text, 'html.parser')  
+        result = {}  
+        try:  
+             result['fund_code']=fund_code  
+             ''''' 
+           之前用select、find 比较多，但是一些网页中经常出现部分字段不全导致内容和数据库不匹配的情况导致数据错位。这里改为用使用标题的next_element 来获取数据值来规避此问题 
+           其中也有个别字段有问题的，特殊处理下即可 
+           '''  
+             result['fund_name']= soup.find_all(text=u"基金全称")[0].next_element.text.strip()  
+             result['fund_abbr_name']= soup.find_all(text=u"基金简称")[0].next_element.text.strip()  
+             #result['fund_code']= soup.find_all(text=u"基金代码")[0].next_element )  
+             result['fund_type']= soup.find_all(text=u"基金类型")[0].next_element.text.strip()  
+             result['issue_date']= soup.find_all(text=u"发行日期")[0].next_element.text.strip()  
+             result['establish_date']= soup.find_all(text=u"成立日期/规模")[0].next_element.text.split(u'/')[0].strip()  
+             result['establish_scale']= soup.find_all(text=u"成立日期/规模")[0].next_element.text.split(u'/')[-1].strip()  
+             result['asset_value']= soup.find_all(text=u"资产规模")[0].next_element.text.split(u'（')[0].strip()  
+             result['asset_value_date']= soup.find_all(text=u"资产规模")[0].next_element.text.split(u'（')[1].split(u'）')[0].strip(u'截止至：')  
+             result['units']= soup.find_all(text=u"份额规模")[0].next_element.text.strip().split(u'（')[0].strip()  
+             result['units_date']= soup.find_all(text=u"份额规模")[0].next_element.text.strip().split(u'（')[1].strip(u'（截止至：）')  
+             result['fund_manager']= soup.find_all(text=u"基金管理人")[0].next_element.text.strip()  
+             result['fund_trustee']= soup.find_all(text=u"基金托管人")[0].next_element.text.strip()  
+             result['funder']= soup.find_all(text=u"基金经理人")[0].next_element.text.strip()  
+             result['total_div']= soup.find_all(text=u"成立来分红")[0].next_element.text.strip()  
+             result['mgt_fee']= soup.find_all(text=u"管理费率")[0].next_element.text.strip()  
+             result['trust_fee']= soup.find_all(text=u"托管费率")[0].next_element.text.strip()  
+             result['sale_fee']= soup.find_all(text=u"销售服务费率")[0].next_element.text.strip()  
+             result['buy_fee']= soup.find_all(text=u"最高认购费率")[0].next_element.text.strip()  
+             result['buy_fee2']= soup.find_all(text=u"最高申购费率")[0].next_element.text.strip()  
+             result['benchmark']= soup.find_all(text=u"业绩比较基准")[0].next_element.text.strip(u'该基金暂未披露业绩比较基准')  
+             result['underlying']= soup.find_all(text=u"跟踪标的")[0].next_element.text.strip(u'该基金无跟踪标的')  
+        except  Exception as e:  
+            print (self.getCurrentTime(), fund_code,fund_url,e )  
+  
+        try:  
+            mySQL.insertData('fund_info', result)  
+            #print (self.getCurrentTime(),'Fund Info Insert Sucess:', result['fund_code'],result['fund_name'],result['fund_abbr_name'],result['fund_manager'],result['funder'],result['establish_date'],result['establish_scale'],result['benchmark'] )  
+        except  Exception as e:  
+            print (self.getCurrentTime(), fund_code,fund_url,e )  
+  
+        try:  
+            print (self.getCurrentTime(),'getFundInfo:', result['fund_code'],result['fund_name'],result['fund_abbr_name'],result['fund_manager'],result['funder'],result['establish_date'],result['establish_scale'],result['benchmark']  
+             # ,result['issue_date'],result['asset_value'],result['asset_value_date'], result['unit'],result['unit_date'],result['fund_trustee']  
+             # ,result['total_div'],result['mg_fee'],result['trust_fee'], result['sale_fee'], result['buy_fee'],result['buy_fee2'],result['underlying']  
+               )  
+        except  Exception as e:  
+            print (self.getCurrentTime(), fund_code,fund_url,e )  
+  
+        return result  
 
 code_url = "http://fund.eastmoney.com/160222.html"
 
